@@ -1,0 +1,27 @@
+public class ValuesController : ControllerBase
+{
+    private readonly IMultiTenantContext<Tenant> _multiTenantContext;
+
+    public ValuesController(IMultiTenantContext<Tenant> multiTenantContext)
+    {
+        _multiTenantContext = multiTenantContext;
+    }
+
+    [HttpGet]
+    public IActionResult Get()
+    {
+        // Access tenant information (if available)
+        if (_multiTenantContext.TenantInfo == null)
+        {
+            return NotFound("Tenant not found");
+        }
+
+        var tenantId = _multiTenantContext.TenantInfo.Identifier;
+
+        // Access properties from HttpContext (e.g., headers, path)
+        var tenantIdFromHeader = HttpContext.Request.Headers.TryGetValue("X-Tenant-Id", out var values) ? values.FirstOrDefault() : null;
+
+        // Use tenantId and tenantIdFromHeader for logic based on tenant and request
+        return Ok($"Hello from tenant: {tenantId}, from header: {tenantIdFromHeader}");
+    }
+}
