@@ -2,6 +2,7 @@ using Finbuckle.MultiTenant;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +12,7 @@ builder.Services.AddMultiTenant<TenantInfo>()
     .WithConfigurationStore();
 
 var app = builder.Build();
+
 
 // Use the middleware to enable multi-tenancy
 app.UseMultiTenant();
@@ -24,6 +26,12 @@ app.MapGet("/", (IMultiTenantContextAccessor<TenantInfo> multiTenantContextAcces
     var tenantInfo = multiTenantContextAccessor.MultiTenantContext?.TenantInfo;
     if (tenantInfo != null)
     {
+        Console.WriteLine( "Hello");
+        using var scope = app.Services.CreateScope();
+        Console.WriteLine( "Hello2");
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>( );
+        Console.WriteLine( "Hello3");
+        Console.WriteLine(dbContext + "dbContext");
         Console.WriteLine(tenantInfo.Name + "tenantInfo");
         return $"Hello {tenantInfo.Name}!";
     }
@@ -31,6 +39,21 @@ app.MapGet("/", (IMultiTenantContextAccessor<TenantInfo> multiTenantContextAcces
     {
         return "Tenant information not available!";
     }
+});
+
+builder.Services.AddScoped<ITenantInfo, MyTenantInfo>();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    // Get the multi-tenant context accessor from the dependency injection container.
+    using var scope = app.Services.CreateScope();
+    var multiTenantContextAccessor = scope.ServiceProvider.GetRequiredService<IMultiTenantContextAccessor<TenantInfo>>();
+
+    // Resolve the current tenant information. This ensures the correct tenant is used.
+    var tenantInfo = multiTenantContextAccessor.MultiTenantContext?.TenantInfo;
+
+    // Use the connection string based on the resolved tenant information.
+    options.UseMySQL(tenantInfo?.ConnectionString ?? builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
 app.Run();

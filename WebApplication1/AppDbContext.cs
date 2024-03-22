@@ -19,6 +19,7 @@ public class AppDbContext : DbContext
 
     public AppDbContext(ITenantInfo tenantInfo)
     {
+        Console.WriteLine("hello");
         // DI will pass in the tenant info for the current request.
         // ITenantInfo is also injectable.
         _tenantInfo = tenantInfo;
@@ -26,6 +27,7 @@ public class AppDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
+        Console.WriteLine("hello 30");
         // Use the connection string to connect to the per-tenant database.
         optionsBuilder.UseSqlServer(_tenantInfo.ConnectionString);
     }
