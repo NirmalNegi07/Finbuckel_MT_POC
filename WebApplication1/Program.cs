@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Finbuckle.MultiTenant;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -10,9 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddMultiTenant<TenantInfo>()
     .WithHostStrategy()
     .WithConfigurationStore();
+    
+builder.Services.AddDbContext<AppDbContext>();
 
 var app = builder.Build();
-
 
 // Use the middleware to enable multi-tenancy
 app.UseMultiTenant();
@@ -33,7 +35,11 @@ app.MapGet("/", (IMultiTenantContextAccessor<TenantInfo> multiTenantContextAcces
         Console.WriteLine( "Hello3");
         Console.WriteLine(dbContext + "dbContext");
         Console.WriteLine(tenantInfo.Name + "tenantInfo");
+        var data = dbContext.GenericEntities.ToList();
+        Console.WriteLine("data"  + data.ToArray() );
         return $"Hello {tenantInfo.Name}!";
+       
+
     }
     else
     {
@@ -41,20 +47,9 @@ app.MapGet("/", (IMultiTenantContextAccessor<TenantInfo> multiTenantContextAcces
     }
 });
 
-builder.Services.AddScoped<ITenantInfo, MyTenantInfo>();
+// builder.Services.AddScoped<ITenantInfo, MyTenantInfo>();
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-{
-    // Get the multi-tenant context accessor from the dependency injection container.
-    using var scope = app.Services.CreateScope();
-    var multiTenantContextAccessor = scope.ServiceProvider.GetRequiredService<IMultiTenantContextAccessor<TenantInfo>>();
 
-    // Resolve the current tenant information. This ensures the correct tenant is used.
-    var tenantInfo = multiTenantContextAccessor.MultiTenantContext?.TenantInfo;
-
-    // Use the connection string based on the resolved tenant information.
-    options.UseMySQL(tenantInfo?.ConnectionString ?? builder.Configuration.GetConnectionString("DefaultConnection"));
-});
 
 app.Run();
 

@@ -1,37 +1,53 @@
 using Finbuckle.MultiTenant;
 using Microsoft.EntityFrameworkCore;
-using MySql.Data.EntityFrameworkCore;
+using MySql.EntityFrameworkCore;
 
-public interface ITenantInfo
-{
-    string ConnectionString { get; }
-}
+// public interface ITenantInfo
+// {
+//     string ConnectionString { get; }
+// }
 
-public class MyTenantInfo : ITenantInfo
-{
-    // Implement the ITenantInfo interface to provide the connection string for the current tenant.
-    public string ConnectionString { get; } = "DefaultConnection";
-}
+// public class MyTenantInfo : ITenantInfo
+// {
+//     // Implement the ITenantInfo interface to provide the connection string for the current tenant.
+//     public string ConnectionString { get; } = "DefaultConnection";
+// }
 
-public class AppDbContext : DbContext
+public class AppDbContext : MultiTenantDbContext
 {
     private readonly ITenantInfo _tenantInfo;
+    public DbSet<GenericEntity> GenericEntities { get; set; }
 
-    public AppDbContext(ITenantInfo tenantInfo)
+    public AppDbContext(ITenantInfo tenantInfo) : base(tenantInfo)
     {
-        Console.WriteLine("hello");
-        // DI will pass in the tenant info for the current request.
-        // ITenantInfo is also injectable.
         _tenantInfo = tenantInfo;
     }
+
+    public AppDbContext(ITenantInfo tenantInfo, DbContextOptions options) : base(tenantInfo, options)
+    {
+       _tenantInfo = tenantInfo; 
+    }
+    // public AppDbContext(IMultiTenantContextAccessor<TenantInfo> multiTenantContextAccessor) : base(multiTenantContextAccessor)
+    // {
+    //     Console.WriteLine("hello");
+    //      _tenantInfo = multiTenantContextAccessor.MultiTenantContext?.TenantInfo;
+    //      Console.WriteLine("hello 30" + _tenantInfo.ConnectionString);
+    //     // DI will pass in the tenant info for the current request.
+    //     // ITenantInfo is also injectable.
+    //     // _tenantInfo = tenantInfo;
+    // }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         Console.WriteLine("hello 30");
         // Use the connection string to connect to the per-tenant database.
-        optionsBuilder.UseSqlServer(_tenantInfo.ConnectionString);
+        optionsBuilder.UseMySQL(_tenantInfo.ConnectionString);
     }
-    public DbSet<GenericEntity> GenericEntities { get; set; }
+    // protected override void OnModelCreating(ModelBuilder modelBuilder)
+    // {
+    //     modelBuilder.Entity<GenericEntity>().IsMultiTenant();
+    //     base.OnModelCreating(modelBuilder);
+    // }
 }
 
 
