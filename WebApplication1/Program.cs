@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using Finbuckle.MultiTenant;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -28,22 +29,35 @@ app.MapGet("/", (IMultiTenantContextAccessor<TenantInfo> multiTenantContextAcces
     var tenantInfo = multiTenantContextAccessor.MultiTenantContext?.TenantInfo;
     if (tenantInfo != null)
     {
-        Console.WriteLine( "Hello");
         using var scope = app.Services.CreateScope();
-        Console.WriteLine( "Hello2");
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>( );
-        Console.WriteLine( "Hello3");
-        Console.WriteLine(dbContext + "dbContext");
-        Console.WriteLine(tenantInfo.Name + "tenantInfo");
         var data = dbContext.GenericEntities.ToList();
-        Console.WriteLine("data"  + data.ToArray() );
         return $"Hello {tenantInfo.Name}!";
-       
-
     }
     else
     {
         return "Tenant information not available!";
+    }
+});
+
+app.MapGet("/students", (IMultiTenantContextAccessor<TenantInfo> multiTenantContextAccessor) =>
+{
+    var tenantInfo = multiTenantContextAccessor.MultiTenantContext?.TenantInfo;
+    if (tenantInfo != null)
+    {
+        using var scope = app.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var schools = dbContext.GenericEntities.ToList(); // Assuming GenericEntities represents schools
+
+        // Serialize schools data into JSON format with indentation
+        var json = JsonSerializer.Serialize(schools, new JsonSerializerOptions { WriteIndented = true });
+
+        // Return the formatted JSON response
+        return Results.Text(json, "application/json");
+    }
+    else
+    {
+        return Results.NotFound("Tenant information not available!");
     }
 });
 

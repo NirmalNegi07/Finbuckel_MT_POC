@@ -16,7 +16,7 @@ using MySql.EntityFrameworkCore;
 public class AppDbContext : MultiTenantDbContext
 {
     private readonly ITenantInfo _tenantInfo;
-    public DbSet<GenericEntity> GenericEntities { get; set; }
+    public DbSet<Student> GenericEntities { get; set; }
 
     public AppDbContext(ITenantInfo tenantInfo) : base(tenantInfo)
     {
